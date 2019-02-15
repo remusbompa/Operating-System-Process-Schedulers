@@ -1,0 +1,165 @@
+Proiectul cuprinde mai multe clase:
+    1)MainClass
+    -reprezinta clasa principala deoarece contine metoda "public static void main"
+    -declar buffer-ul input, corespunzator fisierului de intrare, care reprezinta
+    primul argument la executia clasei principale, deci va fi args[0]
+    -pentru a citi din fisierul input ma folosesc de instanta s a clasei Scanner
+    -primele doua elemente citite din input sunt tipul Cache-ului si numarul de linii
+    ale acestuia. In functie de tipul Cache-ului se va instantia una dintre clasele:
+            *)NoCache
+            *)LruCache
+            *)LfuCache
+        Toate cele trei clase implementeaza metoda:
+    abstract void Cache_plin(int nr_procesat,Proces tip_proces,int timp);
+    a clasei abstracte Cache, metoda care va efectua operatii specifice in cazul in
+    care se adauga un element in Cache iar Cache-ul este plin.
+    -urmatorul element citit este tipul planificatorului. In functie de acesta se 
+    va instantia una dintre clasele:
+            *)RandomScheduler
+            *)RoundRobinScheduler
+            *)WeightedScheduler
+        Toate aceste 3 clase implementeaza metoda:
+    abstract Proces Select(Array_procese arr);
+    a clasei abstracte Planificator, metoda ce va selecta un proces.
+    -urmatorul numar citit este NumberOfEvents, adica numarul de procese. Stiind numarul de
+    procese, apelez constructorul clasei Array_procese, care imi creeaza in interiorul clasei
+    un vector. Apoi, pentru fiecare din cele NumberOfEvents de procese, citesc tipul si cota
+    din fisierul input si adaug procesul in vectorul creat, apeland metoda:
+    void add(String proces,int cota)
+    -declar buffer-ul out, corespunzator fisierului de iesire, care reprezinta al doilea argument 
+    la executia clasei principale, deci va fi args[1]
+    -se citeste numarul de numere procesate iar pentru fiecare numar dintre acestea, selectez un
+    proces in functie de tipul planificatorului si daca tipul memoriei Cache este NoCache, se va
+    scrie in out sirul de caractere corespunzatoare, iar daca tipul memoriei este LruCache sau
+    LfuCache, adaug informatia (numarul procesat si procesul) de la timpul i+1 (al catelea numar
+    este cel procesat, pornind de la 1) in instanta cache.
+
+    2)Cache
+    -este o clasa abstracta care descrie comportamentul celor trei tipuri de Cache
+    -are ca atribute:       *) String tip -tipul memoriei Cache
+                            *) private int nr_linii -numarul de linii al memoriei Cache
+                            *) private LinieCache[] arr -reprezinta un vector de LinieCache 
+                            si si este, de fapt, elementul care modeleaza comportamentul
+                            Cache-ului deoarece in acest vector sunt tinute instantele
+                            clasei LinieCache. Deoarece nu vreau sa il modific din greseala
+                            si pentru a ascunde functionalitatea interna a clasei Cache,
+                            am folosit modificatorul de acces: private si am definit metodele
+                            getter si setter: get si set.
+                            *) private int vf=-1 -varful vectorului (indexul ultimului element
+                            adaugat). Cum initial vectorul este gol, varful acestuia initial 
+                            este -1, urmand ca la fiecare adaugare acesta sa creasca
+    -constructorul clasei initializeaza  tip , nr_linii si aloca pentru vectorul arr, 
+    nr_linii elemente.
+    -are ca metode:
+        *) void add(PrintWriter out,int nr_procesat,Proces tip_proces,int timp)
+        -adauga informatia (tip_proces,nr_procesat) in memoria Cache
+        -mai intai verifica daca acceasi informatie exista deja in Cache (daca exista un ele-
+        ment al Cache-ului cu tip_proces si nr_proces identice cu cele primite ca parametru).
+        In cazul in care gaseste un astfel de element, metoda incrementeaza nr_folosiri si 
+        actualizeaza timpul (cu cel la care primita informatia, parametrul timp). Totodata, 
+        se va scrie in fisierul de iesire out sirul de caractere corespunzator programarii
+        task-ului existent in Cache (cu "FromCache" la sfarsit).
+        Daca nu se gaseste o informatie identica, se executa metoda abstacta: 
+            Cache_plin(nr_procesat,tip_proces,timp)
+        care difera in functie de tipul Cache-ului (LfuCache sau LruCache, deoarece pentru 
+        clasa NonCache nu folosesc metoda add), dar in ambele cazuri se elimina un element. 
+        La sfarsit, se aduga informatia in Cache si se scrie in fisierul out sirul de 
+        caractere corespunzator.
+        *)get(int index) -getter pentru vectorul arr
+        *)set(int index, LinieCache l) -setter pentru vectorul arr
+        *)void remove(int index)
+        -elimina din vectorul arr elementul de pe pozitia index
+        *)int size()
+        -intoarcea dimensiunea folosita a vectorului.
+    
+    3)LinieCache
+    -am folosit aceasta clasa la construirea clasei Cache
+    -modeleaza conceptul de informatie din tema: (proces, numar_procesat), de contine pe
+    langa cele doua atribute: tip_proces si nr_procesat, atributele timp si nr_folosiri,
+    care sunt folositoare pentru a implementa LruCache si LfuCache.
+    
+    4)LfuCache
+    -implementeaza metoda void Cache_plin(int nr_procesat,Proces tip_proces,int timp)
+    a clasei Cache
+    -astfel, in situatia in care Cache-ul se umple, se va cauta indlCache- indicele
+    primei linii Cache cu nr_folosiri minim si se va elimina elementul din vector
+    apeland metoda remove(indlCache) din clasa Cache. Cum nr_linii din Cache nu este
+    0, intotdeauna va exista un indlCache>=0.
+    
+    5)LruCache
+    -implementeaza metoda void Cache_plin(int nr_procesat,Proces tip_proces,int timp)
+    a clasei Cache
+    -astfel, in situatia in care Cache-ul se umple, se va cauta indlCache- indicele
+    primei linii Cache cu nr_timp minim si se va elimina elementul din vector
+    apeland metoda remove(indlCache) din clasa Cache. Cum nr_linii din Cache nu este
+    0, intotdeauna va exista un indlCache>=0.
+    
+    6)Planificator
+    -este o clasa abstracta care defineste metoda abstracta:
+        *)abstract Proces Select(Array_procese arr)
+        -aceasta metoda primeste sirul de procese citite (arr, de tipul Array_procese)
+        si intoarce un element (proces) din acesta.
+    
+    7)RandomScheduler
+    -implementeaza metoda abstracta: abstract Proces Select(Array_procese arr), din 
+    clasa abstracta Planificator, astfel:
+    intoarce procesul de pe un index random (intre 0 si arr.size()-1)
+    ( arr.get(randgen.nextInt(arr.size())) )
+    
+    8)RoundRobinScheduler
+    -implementeaza metoda abstracta: abstract Proces Select(Array_procese arr), din 
+    clasa abstracta Planificator, astfel:
+    cauta un proces pentru care numarul de rulari sa nu fie mai mare decat numarul de
+    rulari al oricarui alt proces.
+    
+    9)WeightedScheduler
+    -implementeaza metoda abstracta: abstract Proces Select(Array_procese arr), din
+    clasa abstracta Planificator, astfel:
+        -se calculeaza suma cotelor tuturor proceselor
+        -se calculeaza cel mai mare divizor comun al cotelor proceselor, folosind 
+        metoda statica DivizorComun din clasa Cmmdc.
+        -se impart cele doua si se obtine t-ul din cerinta. (rezultatul sigur e intreg)
+        -cum momentul de timp e suma rularilor proceselor, acesta se calculeaza si se 
+        salveaza in variabila moment_timp.
+        -selectez procesul astfel incat intre nt (inclusiv) si (n+1)t (exculsiv), cu n
+        natural de la 0 inclusiv, sa se execute al i-lea proces de cota acestuia / cmmdc
+        calculat ori. Astfel se respecta semnificatia cotelor (procentul de rulari ale
+        procesului respectiv raportat la numarul de rulari din tot sistemul )
+        Consider rulari_i -nr de rulari care trebuie facute pana la al i+1-lea proces si 
+        daca moment_timp%t<rulari_i inseamna ca trebuie selectat al i-lea proces 
+        ( arr.get(i) )
+    
+    10)Array_procese
+    - clasa care tine procesele citite din input (sub forma unui vector)
+    - are atributele:
+        *)private int vf=-1; -varful vectorului arr_procese
+        *)private Proces[] arr_procese; -vectorul de procese
+    -constructorul clasei creeaza vectorul arr_procese, cu o dimensiune data prin parametru
+    -are metodele:
+        *)void add(String proces,int cota)
+        -in functie de tipul procesului (care este dat pri primul parametru), instantiaza 
+        urmatorul element din vector
+        *)Proces get(int index)
+        -getter pentru vectorul arr_procese, care are modificatorul de acces, private
+        *)int size()
+        -intoarce dimensiunea vectorului
+    
+    11)Proces
+    -are atributele:    *)public String nume; -numele procesului
+                        *)int cota; -cota procesului
+                        *)int nr_rulari=0; -numarul de rulari (apeluri ale metodei Executa)
+    si are metoda       *)void rulare(); care incrementeza nr_rulari.
+    -este o clasa abstracta deoarece contine metoda abstracta:
+            *)abstract int Executa(int nr);
+            -aceasta metoda va fi implementata de cele 7 clase care mostenesc clasa abstracta
+            Proces si care indeplinesc conditiile din cerinta:
+            12)CheckPrime
+            13)NextPrime
+            14)Fibonacci
+            15)Sqrt
+            16)Square
+            17)Cube
+            18)Factorial
+            -pentru toate aceste clase, atunci cand se va apela metoda Executa, se va apela si
+            metoda rulare din clasa Proces, deci se va incrementa numarul de rulari.
+
